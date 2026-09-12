@@ -1,7 +1,38 @@
 # Cartwheel
 
-Cartwheel is a personal practice project for building out a .NET backend from the ground up. It currently exists as a bare solution skeleton — a domain class library with no logic yet and an accompanying test project — used as a sandbox for exploring project structure, testing setup, and .NET idioms before real application features are added.
+Cartwheel is an online shop — an e-commerce storefront where customers can browse a product catalog, manage a cart, and place orders. It's currently a work in progress: the backend solution and database are scaffolded, and application features are being built out incrementally.
 
-The stack is C# targeting .NET 10, organized as a solution (`Cartwheel.slnx`) under [backend/](backend). [Cartwheel.Domain](backend/Cartwheel.Domain) is the (currently empty) domain class library, and [Cartwheel.Tests](backend/Cartwheel.Tests) is an xUnit test project (with `coverlet.collector` for coverage) that references it. Both projects have nullable reference types and implicit usings enabled.
+## Tech stack:
+backend:
+- C# 14, .Net 10
+- MSSQL
 
-To run it, you'll need the [.NET 10 SDK](https://dotnet.microsoft.com/download) installed. From the `backend` directory, restore and build with `dotnet build`, and run the test suite with `dotnet test`.
+frontend:
+- Angular
+
+## How to run
+
+**Database**
+
+The backend expects a SQL Server instance, provided via Docker Compose.
+
+1. Copy `.env.example` to `.env` and set `MSSQL_SA_PASSWORD` to a password meeting SQL Server's complexity requirements.
+2. Start the database:
+   ```bash
+   docker compose up -d
+   ```
+   This starts MSSQL on `localhost:1433`.
+
+**Backend**
+
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
+
+```bash
+cd backend
+dotnet build
+dotnet test
+```
+
+**Frontend**
+
+The Angular frontend hasn't been scaffolded yet — instructions will be added here once it exists.
