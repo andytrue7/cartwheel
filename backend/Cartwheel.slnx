@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Cartwheel.Domain/Cartwheel.Domain.csproj" />
+  <Project Path="Cartwheel.Tests/Cartwheel.Tests.csproj" />
+</Solution>
