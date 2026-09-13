@@ -37,8 +37,8 @@ public class Product
         get;
         private set
         {
-            if (value <= 0) {
-                throw new ArgumentException("Stock quantity must be greater than zero");}
+            if (value < 0) {
+                throw new ArgumentException("Stock quantity can't be negative");}
             
             field = value;
         }
@@ -47,14 +47,7 @@ public class Product
     public Category Category
     {
         get;
-        private set
-        {
-            if (value == null)
-            {
-                throw new ArgumentException("Category cannot be null");
-            }
-            field = value;
-        }
+        private set => field = value ?? throw new ArgumentNullException("Category cannot be null");
     }
 
     public Product(
@@ -62,7 +55,7 @@ public class Product
         decimal price,  
         int stockQuantity, 
         Category category,
-        string description = ""
+        string? description = null
         )
     {
         Id = Guid.NewGuid();
