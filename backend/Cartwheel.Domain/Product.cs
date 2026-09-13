@@ -1,3 +1,5 @@
+using Cartwheel.Domain.Exceptions;
+
 namespace Cartwheel.Domain;
 
 public class Product
@@ -47,7 +49,7 @@ public class Product
     public Category Category
     {
         get;
-        private set => field = value ?? throw new ArgumentNullException("Category cannot be null");
+        private set => field = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     public Product(
@@ -71,8 +73,28 @@ public class Product
         Price = newPrice;
     }
     
-    public void SetStockQuantity(int newStockQuantity)
+    public void IncreaseStock(int quantity)
     {
-        StockQuantity = newStockQuantity;
+        if (quantity <= 0)
+        {
+            throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+        }
+
+        StockQuantity += quantity;
+    }
+
+    public void DecreaseStock(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+        }
+
+        if (quantity > StockQuantity)
+        {
+            throw new InsufficientStockException(Name, quantity, StockQuantity);
+        }
+
+        StockQuantity -= quantity;
     }
 }
