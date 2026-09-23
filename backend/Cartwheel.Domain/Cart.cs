@@ -5,7 +5,7 @@ namespace Cartwheel.Domain;
 
 public class Cart
 {
-    private readonly List<CartItem> _items = new List<CartItem>();
+    private readonly List<CartItem> _items = [];
     private readonly ReadOnlyCollection<CartItem> _itemsReadOnly;
 
     public Guid Id { get; }
@@ -72,13 +72,14 @@ public class Cart
 
     public void RemoveItem(Guid productId)
     {
-        foreach (var item in _items.ToList())
+        CartItem? cartItem = Items.FirstOrDefault(x => x.Product.Id == productId);
+
+        if (cartItem == null)
         {
-            if (item.Product.Id == productId)
-            {
-                _items.Remove(item);
-            }
+            throw new InvalidOperationException($"Product '{productId}' is not in the cart.");
         }
+        
+        _items.Remove(cartItem);
     }
 
     public void Clear()
@@ -88,23 +89,11 @@ public class Cart
 
     public decimal GetTotalPrice()
     {
-        decimal totalPrice = 0;
-        foreach (var item in _items)
-        {
-            totalPrice += item.LineTotal;
-        }
-
-        return totalPrice;
+        return Items.Sum(x => x.LineTotal);
     }
 
     public int GetTotalUnits()
-    {
-        int total = 0;
-        foreach (var item in _items)
-        {
-            total += item.Quantity;
-        }
-
-        return total;
+    { 
+        return Items.Sum(x => x.Quantity);
     }
 }
