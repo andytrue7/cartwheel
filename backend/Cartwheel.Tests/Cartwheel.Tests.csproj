@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cartwheel.Domain\Cartwheel.Domain.csproj" />
+    <ProjectReference Include="..\Cartwheel.Infrastructure\Cartwheel.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
