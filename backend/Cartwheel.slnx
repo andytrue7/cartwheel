@@ -1,6 +1,8 @@
 <Solution>
+  <Project Path="Cartwheel.Api/Cartwheel.Api.csproj" />
   <Project Path="Cartwheel.Domain/Cartwheel.Domain.csproj" />
   <Project Path="Cartwheel.Infrastructure/Cartwheel.Infrastructure.csproj" />
   <Project Path="Cartwheel.Playground/Cartwheel.Playground.csproj" />
+  <Project Path="Cartwheel.Shared/Cartwheel.Shared.csproj" />
   <Project Path="Cartwheel.Tests/Cartwheel.Tests.csproj" />
 </Solution>

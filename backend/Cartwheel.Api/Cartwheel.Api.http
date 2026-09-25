@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:5189
+
+### 1. List all products (expect 200, sorted by name)
+GET {{baseUrl}}/api/products
+Accept: application/json
+
+> {%
+    client.global.set("productId", response.body[0].id);
+%}
+
+### 2. Existing product (expect 200). Run request 1 first to set productId.
+GET {{baseUrl}}/api/products/{{productId}}
+Accept: application/json
+
+### 3. Unknown Guid (expect 404 with a ProblemDetails body)
+GET {{baseUrl}}/api/products/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+### 4. Not a Guid (expect 404 with an empty body: the :guid route constraint doesn't match)
+GET {{baseUrl}}/api/products/abc
+Accept: application/json

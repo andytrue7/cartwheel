@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Cartwheel.Domain;
 using Cartwheel.Domain.Repositories;
 
@@ -5,7 +6,7 @@ namespace Cartwheel.Infrastructure.Repositories;
 
 public class InMemoryProductRepository : IProductRepository
 {
-    private readonly Dictionary<Guid, Product> _products = new();
+    private readonly ConcurrentDictionary<Guid, Product> _products = new();
 
     public InMemoryProductRepository(IEnumerable<Product>? initialProducts = null)
     {
@@ -19,8 +20,13 @@ public class InMemoryProductRepository : IProductRepository
     {
         ct.ThrowIfCancellationRequested();
 
-        // ToList copies the values, so callers get a snapshot that later changes won't affect.
-        return Task.FromResult<IReadOnlyList<Product>>(_products.Values.ToList());
+        var ordered = _products.Values
+            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => p.Id)
+            .ToList();
+        
+        
+        return Task.FromResult<IReadOnlyList<Product>>(ordered);
     }
 
     public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -43,7 +49,7 @@ public class InMemoryProductRepository : IProductRepository
     {
         ct.ThrowIfCancellationRequested();
 
-        return Task.FromResult(_products.Remove(id));
+        return Task.FromResult(_products.TryRemove(id, out _));
     }
 
     private void Add(Product product)

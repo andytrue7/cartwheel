@@ -58,6 +58,17 @@ public class InMemoryProductRepositoryTests
 
         Assert.Single(before);
     }
+    
+    [Fact]
+    public async Task GetAllAsync_ReturnsProductsSortedByName()
+    {
+        var repository = new InMemoryProductRepository(
+            [CreateProduct("Phone"), CreateProduct("laptop"), CreateProduct("Camera")]);
+
+        var all = await repository.GetAllAsync();
+
+        Assert.Equal(["Camera", "laptop", "Phone"], all.Select(p => p.Name));
+    }
 
     [Fact]
     public async Task AddAsync_SameProductTwice_ThrowsInvalidOperationException()
