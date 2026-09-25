@@ -33,6 +33,12 @@ dotnet build
 dotnet test
 ```
 
+To run api:
+```bash
+dotnet run --project Cartwheel.Api --launch-profile http
+http://localhost:5189/swagger
+```
+
 **Frontend**
 
 The Angular frontend hasn't been scaffolded yet — instructions will be added here once it exists.

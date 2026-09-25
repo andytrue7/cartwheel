@@ -25,7 +25,6 @@ public class InMemoryProductRepository : IProductRepository
             .ThenBy(p => p.Id)
             .ToList();
         
-        
         return Task.FromResult<IReadOnlyList<Product>>(ordered);
     }
 
