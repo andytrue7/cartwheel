@@ -44,6 +44,19 @@ public class InMemoryProductRepository : IProductRepository
         return Task.CompletedTask;
     }
 
+    public Task<bool> UpdateAsync(Product product, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(product);
+
+        if (!_products.TryGetValue(product.Id, out var current))
+        {
+            return Task.FromResult(false);
+        }
+        
+        return Task.FromResult(_products.TryUpdate(product.Id, product, current));
+    }
+    
     public Task<bool> RemoveAsync(Guid id, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();

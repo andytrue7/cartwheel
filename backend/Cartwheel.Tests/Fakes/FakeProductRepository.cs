@@ -30,6 +30,18 @@ public class FakeProductRepository(params Product[] products) : IProductReposito
         return Task.CompletedTask;
     }
 
+    public Task<bool> UpdateAsync(Product product, CancellationToken ct = default)
+    {
+        var index = _products.FindIndex(p => p.Id == product.Id);
+        if (index < 0)
+        {
+            return Task.FromResult(false);
+        }
+
+        _products[index] = product;
+        return Task.FromResult(true);
+    }
+    
     public Task<bool> RemoveAsync(Guid id, CancellationToken ct = default)
     {
         return Task.FromResult(_products.RemoveAll(p => p.Id == id) > 0);

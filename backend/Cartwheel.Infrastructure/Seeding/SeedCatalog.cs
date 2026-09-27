@@ -2,16 +2,19 @@ using Cartwheel.Domain;
 
 namespace Cartwheel.Infrastructure.Seeding;
 
+/// <summary>Categories and products that reference the very same Category objects.</summary>
+public sealed record SeedData(IReadOnlyList<Category> Categories, IReadOnlyList<Product> Products);
+
 public static class SeedCatalog
 {
-    public static IReadOnlyList<Product> CreateProducts()
+    public static SeedData Create()
     {
         var laptops = new Category("Laptops");
         var tvs = new Category("TVs");
         var smartphones = new Category("Smartphones");
         var headphones = new Category("Headphones");
-        
-        return 
+
+        Product[] products =
         [
             new Product("MacBook Air M3", 1099m, 7, laptops, "13-inch everyday laptop"),
             new Product("MacBook Pro M4", 1999m, 3, laptops, "14-inch laptop for professionals"),
@@ -26,5 +29,7 @@ public static class SeedCatalog
             new Product("Sony WH-1000XM6", 399m, 8, headphones, "Over-ear headphones"),
             new Product("JBL Tune 520", 49m, 40, headphones)
         ];
+
+        return new SeedData([laptops, tvs, smartphones, headphones], products);
     }
 }

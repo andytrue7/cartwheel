@@ -10,8 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
-builder.Services.AddSingleton<IProductRepository>(
-    _ => new InMemoryProductRepository(SeedCatalog.CreateProducts()));
+// One seed, so products and the category repository share the same Category objects.
+var seed = SeedCatalog.Create();
+builder.Services.AddSingleton<ICategoryRepository>(new InMemoryCategoryRepository(seed.Categories));
+builder.Services.AddSingleton<IProductRepository>(new InMemoryProductRepository(seed.Products));
 builder.Services.AddScoped<CartService>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

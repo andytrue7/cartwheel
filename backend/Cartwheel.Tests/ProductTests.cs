@@ -168,4 +168,113 @@ public class ProductTests
         Assert.Throws<ArgumentException>(() => product.IncreaseStock(quantity));
         Assert.Equal(10, product.StockQuantity);
     }
+    
+    [Fact]
+    public void Rename_WithValidName_ChangesName()
+    {
+        var product = CreateProduct(name: "Old");
+
+        product.Rename("New");
+
+        Assert.Equal("New", product.Name);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Rename_WithEmptyName_ThrowsAndKeepsOldName(string? newName)
+    {
+        var product = CreateProduct(name: "Old");
+
+        Assert.Throws<ArgumentException>(() => product.Rename(newName!));
+        Assert.Equal("Old", product.Name);
+    }
+
+    [Fact]
+    public void ChangeDescription_WithNull_ClearsDescription()
+    {
+        var product = CreateProduct(description: "Old description");
+
+        product.ChangeDescription(null);
+
+        Assert.Null(product.Description);
+    }
+
+    [Fact]
+    public void ChangeCategory_WithNewCategory_ChangesCategory()
+    {
+        var product = CreateProduct();
+        var phones = new Category("Phones");
+
+        product.ChangeCategory(phones);
+
+        Assert.Same(phones, product.Category);
+    }
+
+    [Fact]
+    public void ChangeCategory_WithNull_ThrowsAndKeepsCategory()
+    {
+        var product = CreateProduct();
+
+        Assert.Throws<ArgumentNullException>(() => product.ChangeCategory(null!));
+        Assert.Same(_category, product.Category);
+    }
+
+    [Fact]
+    public void UpdateDetails_WithValidValues_ChangesDetailsButNotStock()
+    {
+        var product = CreateProduct(name: "Old", price: 1000m, stock: 7, description: "Old description");
+        var phones = new Category("Phones");
+
+        product.UpdateDetails("New", null, 899.99m, phones);
+
+        Assert.Equal("New", product.Name);
+        Assert.Null(product.Description);
+        Assert.Equal(899.99m, product.Price);
+        Assert.Same(phones, product.Category);
+        Assert.Equal(7, product.StockQuantity);
+    }
+
+    [Fact]
+    public void UpdateDetails_WithInvalidPrice_ThrowsAndChangesNothing()
+    {
+        var product = CreateProduct(name: "Old", price: 1000m, description: "Old description");
+
+        // The name is valid and would be applied first if validation happened field by field.
+        Assert.Throws<ArgumentException>(
+            () => product.UpdateDetails("New", "New description", 0m, new Category("Phones")));
+
+        AssertUnchanged(product);
+    }
+
+    [Fact]
+    public void UpdateDetails_WithNullCategory_ThrowsAndChangesNothing()
+    {
+        var product = CreateProduct(name: "Old", price: 1000m, description: "Old description");
+
+        Assert.Throws<ArgumentNullException>(
+            () => product.UpdateDetails("New", "New description", 5m, null!));
+
+        AssertUnchanged(product);
+    }
+
+    [Fact]
+    public void UpdateDetails_WithBlankName_ThrowsAndChangesNothing()
+    {
+        var product = CreateProduct(name: "Old", price: 1000m, description: "Old description");
+
+        Assert.Throws<ArgumentException>(
+            () => product.UpdateDetails(" ", "New description", 5m, new Category("Phones")));
+
+        AssertUnchanged(product);
+    }
+
+    private void AssertUnchanged(Product product)
+    {
+        Assert.Equal("Old", product.Name);
+        Assert.Equal("Old description", product.Description);
+        Assert.Equal(1000m, product.Price);
+        Assert.Same(_category, product.Category);
+    }
 }

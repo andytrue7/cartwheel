@@ -9,15 +9,7 @@ public class Product
     public string Name
     {
         get;
-        private set
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                throw new ArgumentException("Product name cannot be empty");
-            }
-            
-            field = value;
-        }
+        private set => field = ValidateName(value);
     }
 
     public string? Description { get; private set; }
@@ -25,13 +17,7 @@ public class Product
     public decimal Price
     {
         get;
-        private set
-        {
-            if (value <= 0) {
-                throw new ArgumentException("Price must be greater than zero");}
-
-            field = value;
-        }
+        private set => field = ValidatePrice(value);
     }
 
     public int StockQuantity
@@ -49,7 +35,7 @@ public class Product
     public Category Category
     {
         get;
-        private set => field = value ?? throw new ArgumentNullException(nameof(value));
+        private set => field = ValidateCategory(value);
     }
 
     public Product(
@@ -97,4 +83,49 @@ public class Product
 
         StockQuantity -= quantity;
     }
+    
+    public void Rename(string newName) => Name = newName;
+    
+    public void ChangeDescription(string? newDescription) => Description = newDescription;
+    
+    public void ChangeCategory(Category newCategory) => Category = newCategory;
+
+    /// <summary>
+    /// Changes all editable details at once. Every value is validated before anything is assigned,
+    /// so a failed update never leaves the product half-changed. Stock is not editable here.
+    /// </summary>
+    public void UpdateDetails(string name, string? description, decimal price, Category category)
+    {
+        ValidateName(name);
+        ValidatePrice(price);
+        ValidateCategory(category);
+
+        Name = name;
+        Description = description;
+        Price = price;
+        Category = category;
+    }
+
+    private static string ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Product name cannot be empty");
+        }
+
+        return name;
+    }
+
+    private static decimal ValidatePrice(decimal price)
+    {
+        if (price <= 0)
+        {
+            throw new ArgumentException("Price must be greater than zero");
+        }
+
+        return price;
+    }
+
+    private static Category ValidateCategory(Category category) =>
+        category ?? throw new ArgumentNullException(nameof(category));
 }

@@ -19,3 +19,126 @@ Accept: application/json
 ### 4. Not a Guid (expect 404 with an empty body: the :guid route constraint doesn't match)
 GET {{baseUrl}}/api/products/abc
 Accept: application/json
+
+### 5. List categories (expect 200)
+GET {{baseUrl}}/api/categories
+Accept: application/json
+
+> {%
+    client.test("200", () => client.assert(response.status === 200));
+    client.global.set("categoryId", response.body[0].id);
+%}
+
+### 6. Create product (expect 201 + Location)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Framework Laptop 13",
+  "description": "Repairable laptop",
+  "price": 1049,
+  "stockQuantity": 5,
+  "categoryId": "{{categoryId}}"
+}
+
+> {%
+    client.test("201 with Location", () => {
+        client.assert(response.status === 201);
+        client.assert(response.headers.valueOf("Location") !== null);
+    });
+    client.global.set("createdId", response.body.id);
+%}
+
+### 7. Create with invalid fields (expect 400)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "   ",
+  "price": 0,
+  "stockQuantity": -1,
+  "categoryId": "{{categoryId}}"
+}
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 8. Create without categoryId (expect 400)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "No category",
+  "price": 10
+}
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 9. Create with unknown category (expect 400)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Orphan",
+  "price": 10,
+  "categoryId": "00000000-0000-0000-0000-000000000000"
+}
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 10. Update product (expect 204)
+PUT {{baseUrl}}/api/products/{{createdId}}
+Content-Type: application/json
+
+{
+  "name": "Framework Laptop 13 (2026)",
+  "description": null,
+  "price": 999,
+  "categoryId": "{{categoryId}}"
+}
+
+> {% client.test("204", () => client.assert(response.status === 204)); %}
+
+### 11. Read it back (expect 200 with the new name)
+GET {{baseUrl}}/api/products/{{createdId}}
+Accept: application/json
+
+> {%
+    client.test("updated", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.name === "Framework Laptop 13 (2026)");
+    });
+%}
+
+### 12. Update unknown id (expect 404)
+PUT {{baseUrl}}/api/products/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "name": "Ghost",
+  "price": 10,
+  "categoryId": "{{categoryId}}"
+}
+
+> {% client.test("404", () => client.assert(response.status === 404)); %}
+
+### 13. Update with invalid body (expect 400)
+PUT {{baseUrl}}/api/products/{{createdId}}
+Content-Type: application/json
+
+{
+  "name": "",
+  "price": -5,
+  "categoryId": "{{categoryId}}"
+}
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 14. Delete (expect 204)
+DELETE {{baseUrl}}/api/products/{{createdId}}
+
+> {% client.test("204", () => client.assert(response.status === 204)); %}
+
+### 15. Delete the same product again (expect 404)
+DELETE {{baseUrl}}/api/products/{{createdId}}
+
+> {% client.test("404", () => client.assert(response.status === 404)); %}

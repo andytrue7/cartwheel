@@ -110,6 +110,39 @@ public class InMemoryProductRepositoryTests
     }
 
     [Fact]
+    public async Task UpdateAsync_ExistingProduct_ReturnsTrueAndKeepsChanges()
+    {
+        var laptop = CreateProduct("Laptop");
+        var repository = new InMemoryProductRepository([laptop]);
+        laptop.Rename("Gaming laptop");
+
+        var updated = await repository.UpdateAsync(laptop);
+
+        Assert.True(updated);
+        Assert.Equal("Gaming laptop", (await repository.GetByIdAsync(laptop.Id))!.Name);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UnknownProduct_ReturnsFalseAndDoesNotAddIt()
+    {
+        var repository = new InMemoryProductRepository();
+        var stranger = CreateProduct();
+
+        var updated = await repository.UpdateAsync(stranger);
+
+        Assert.False(updated);
+        Assert.Empty(await repository.GetAllAsync());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NullProduct_ThrowsArgumentNullException()
+    {
+        var repository = new InMemoryProductRepository();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
+    }
+
+    [Fact]
     public async Task GetAllAsync_WhenCancelled_ThrowsOperationCanceledException()
     {
         var repository = new InMemoryProductRepository();
