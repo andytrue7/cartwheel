@@ -26,8 +26,8 @@ works about 1 to 2 hours a day.
 
 - Phase 0 (environment): done.
 - Phase 1 (C# fundamentals through the domain): done.
-- Phase 2 (ASP.NET Web API): Tasks 1 to 3 done and committed.
-- **Next: Phase 2, Task 4, global exception handling that maps domain exceptions to ProblemDetails.**
+- Phase 2 (ASP.NET Web API): Tasks 1 to 4 done. Task 4 quiz answers still to be graded.
+- **Next: Phase 2, Task 5, controller unit tests with a mocking library.**
 
 Update this section after each approved task.
 
@@ -57,6 +57,9 @@ Update this section after each approved task.
 - **Repositories:** interfaces live in the domain and implementations in Infrastructure. Lists come back
   materialized and read-only, always sorted with a tie-breaker. A missing item returns null, and
   remove or update returns a bool. Filtering happens in the repository, not the controller.
+- **Errors:** `DomainExceptionHandler` (an `IExceptionHandler`) maps domain exceptions to ProblemDetails:
+  insufficient stock and stock over `Product.MaxStockQuantity` are 409, not found is 404, and any other domain rule is 400. Unknown exceptions become a
+  generic 500 with no details. `UseExceptionHandler()` is first in the pipeline. No `try/catch` in controllers.
 - **API:** thin controllers, DTOs only (never domain objects), lowercase routes, `{id:guid}` constraints,
   201 with `CreatedAtAction` for creates, 204 for update and delete, 404 only when the resource in the
   URL doesn't exist, 400 through `ValidationProblem` for a bad id inside a body, and 200 with an empty
@@ -69,7 +72,10 @@ Update this section after each approved task.
 - `Cart` still throws `InvalidOperationException` for a product that isn't in the cart. Consider a
   domain exception when the cart gets an API.
 - Enum query values also accept defined numbers (`sort=1`). Acceptable for now.
-- Domain exceptions currently surface as HTTP 500. Phase 2 Task 4 fixes this.
+- `DomainExceptionHandler` maps exceptions by type only, so `ProductNotFoundException` is always 404,
+  even when the id came from a body (which should be 400). Revisit when the cart gets an API.
+- Stock changes are check-then-act on a shared in-memory instance, so they are not safe under
+  concurrent requests. Phase 5 Task 4 (optimistic concurrency) addresses this.
 
 ## Roadmap
 

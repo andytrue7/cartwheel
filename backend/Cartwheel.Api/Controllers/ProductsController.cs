@@ -81,6 +81,39 @@ public class ProductsController(
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct) =>
         await products.RemoveAsync(id, ct) ? NoContent() : NotFound();
 
+    [HttpPost("{id:guid}/stock/increase")]
+    [ProducesResponseType<ProductResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<ActionResult<ProductResponse>> IncreaseStock(
+        Guid id, StockChangeRequest request, CancellationToken ct) =>
+        ChangeStock(id, product => product.IncreaseStock(request.Quantity), ct);
+
+    // Not enough stock throws InsufficientStockException; DomainExceptionHandler turns it into a 409.
+    [HttpPost("{id:guid}/stock/decrease")]
+    [ProducesResponseType<ProductResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public Task<ActionResult<ProductResponse>> DecreaseStock(
+        Guid id, StockChangeRequest request, CancellationToken ct) =>
+        ChangeStock(id, product => product.DecreaseStock(request.Quantity), ct);
+
+    // Load, apply one domain method, save, return the new state: both stock actions share this.
+    private async Task<ActionResult<ProductResponse>> ChangeStock(
+        Guid id, Action<Product> change, CancellationToken ct)
+    {
+        var product = await products.GetByIdAsync(id, ct);
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        change(product);
+
+        return await products.UpdateAsync(product, ct) ? Ok(product.ToResponse()) : NotFound();
+    }
+
     private ActionResult UnknownCategory()
     {
         ModelState.AddModelError(nameof(CreateProductRequest.CategoryId), "Category does not exist.");

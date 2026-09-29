@@ -4,6 +4,11 @@ namespace Cartwheel.Domain;
 
 public class Product
 {
+    /// <summary>
+    /// Upper bound for stock. Far below <see cref="int.MaxValue"/>, so stock arithmetic can never overflow.
+    /// </summary>
+    public const int MaxStockQuantity = 1_000_000;
+
     public Guid Id { get; }
 
     public string Name
@@ -25,9 +30,16 @@ public class Product
         get;
         private set
         {
-            if (value < 0) {
-                throw new ArgumentException("Stock quantity can't be negative");}
-            
+            if (value < 0)
+            {
+                throw new ArgumentException("Stock quantity can't be negative");
+            }
+
+            if (value > MaxStockQuantity)
+            {
+                throw new ArgumentException($"Stock quantity can't exceed {MaxStockQuantity}");
+            }
+
             field = value;
         }
     }
@@ -64,6 +76,12 @@ public class Product
         if (quantity <= 0)
         {
             throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+        }
+
+        // Compare against the room left, not StockQuantity + quantity: the sum itself could overflow.
+        if (quantity > MaxStockQuantity - StockQuantity)
+        {
+            throw new StockLimitExceededException(Name, quantity, StockQuantity, MaxStockQuantity);
         }
 
         StockQuantity += quantity;

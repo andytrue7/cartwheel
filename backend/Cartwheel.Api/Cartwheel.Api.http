@@ -231,3 +231,70 @@ Accept: application/json
         client.assert(response.body.length === 0);
     });
 %}
+
+### 24. Increase stock (expect 200 with the updated product). Run request 1 first to set productId.
+POST {{baseUrl}}/api/products/{{productId}}/stock/increase
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+> {%
+    client.test("200 with new stock", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.id === client.global.get("productId"));
+    });
+    client.global.set("stock", response.body.stockQuantity);
+%}
+
+### 25. Decrease within stock (expect 200, stock goes down by 2)
+POST {{baseUrl}}/api/products/{{productId}}/stock/decrease
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+> {%
+    client.test("200, stock reduced", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.stockQuantity === client.global.get("stock") - 2);
+    });
+%}
+
+### 26. Decrease beyond stock (expect 409 ProblemDetails with requestedQuantity and availableQuantity)
+POST {{baseUrl}}/api/products/{{productId}}/stock/decrease
+Content-Type: application/json
+
+{
+  "quantity": 100000
+}
+
+> {%
+    client.test("409 with numbers", () => {
+        client.assert(response.status === 409);
+        client.assert(response.body.requestedQuantity === 100000);
+        client.assert(typeof response.body.availableQuantity === "number");
+    });
+%}
+
+### 27. Quantity 0 (expect 400 from validation, the domain is never called)
+POST {{baseUrl}}/api/products/{{productId}}/stock/increase
+Content-Type: application/json
+
+{
+  "quantity": 0
+}
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 28. Stock change on an unknown id (expect 404)
+POST {{baseUrl}}/api/products/00000000-0000-0000-0000-000000000000/stock/decrease
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+> {% client.test("404", () => client.assert(response.status === 404)); %}

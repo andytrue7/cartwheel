@@ -75,6 +75,12 @@ public class ProductTests
     }
 
     [Fact]
+    public void Constructor_WithStockAboveMaximum_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() => CreateProduct(stock: Product.MaxStockQuantity + 1));
+    }
+
+    [Fact]
     public void Constructor_WithNullCategory_ThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => new Product("MacBook Air", 1000m, 1, null!));
@@ -166,6 +172,43 @@ public class ProductTests
         var product = CreateProduct(stock: 10);
 
         Assert.Throws<ArgumentException>(() => product.IncreaseStock(quantity));
+        Assert.Equal(10, product.StockQuantity);
+    }
+
+    [Fact]
+    public void IncreaseStock_UpToExactlyMaximum_IsAllowed()
+    {
+        var product = CreateProduct(stock: 10);
+
+        product.IncreaseStock(Product.MaxStockQuantity - 10);
+
+        Assert.Equal(Product.MaxStockQuantity, product.StockQuantity);
+    }
+
+    [Fact]
+    public void IncreaseStock_BeyondMaximum_ThrowsStockLimitExceededAndKeepsStock()
+    {
+        // Arrange
+        var product = CreateProduct(name: "MacBook Air", stock: Product.MaxStockQuantity - 2);
+
+        // Act
+        var exception = Assert.Throws<StockLimitExceededException>(() => product.IncreaseStock(3));
+
+        // Assert
+        Assert.Equal("MacBook Air", exception.ProductName);
+        Assert.Equal(3, exception.RequestedQuantity);
+        Assert.Equal(Product.MaxStockQuantity - 2, exception.CurrentQuantity);
+        Assert.Equal(Product.MaxStockQuantity, exception.MaxQuantity);
+        Assert.Equal(Product.MaxStockQuantity - 2, product.StockQuantity);
+    }
+
+    // Regression: StockQuantity + int.MaxValue used to wrap to a negative number.
+    [Fact]
+    public void IncreaseStock_WithIntMaxValue_ThrowsStockLimitExceededInsteadOfOverflowing()
+    {
+        var product = CreateProduct(stock: 10);
+
+        Assert.Throws<StockLimitExceededException>(() => product.IncreaseStock(int.MaxValue));
         Assert.Equal(10, product.StockQuantity);
     }
     

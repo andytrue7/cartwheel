@@ -23,9 +23,9 @@ Angular CLI installed, SQL Server in Docker Compose with a named volume, git rep
 2. ✅ POST, PUT, DELETE with data annotations and correct status codes. Category repository,
    categories endpoint, shared seed data, all-or-nothing `UpdateDetails`.
 3. ✅ Search, category filter, in-stock filter, and sorting through the query string. Playground deleted.
-4. ▶️ Global exception handling that maps domain exceptions to ProblemDetails, so business errors
+4. ✅ Global exception handling that maps domain exceptions to ProblemDetails, so business errors
    return 4xx instead of 500. Consider exposing the cart through the API to have a real case.
-5. ⬜ Controller unit tests with a mocking library (Moq or NSubstitute).
+5. ▶️ Controller unit tests with a mocking library (Moq or NSubstitute).
 
 Phase quiz topics: the request pipeline, dependency injection lifetimes, idempotency, status codes.
 
