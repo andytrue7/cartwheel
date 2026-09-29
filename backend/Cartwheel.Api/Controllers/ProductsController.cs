@@ -14,10 +14,14 @@ public class ProductsController(
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(
+        [FromQuery] ProductListQuery query,
+        CancellationToken ct)
     {
-        var all = await products.GetAllAsync(ct);
-        return Ok(all.Select(p => p.ToResponse()).ToList());
+        // An unknown category simply matches nothing: filters narrow a list, they don't validate ids.
+        var matching = await products.GetAllAsync(query.ToFilter(), ct);
+        return Ok(matching.Select(p => p.ToResponse()).ToList());
     }
 
     [HttpGet("{id:guid}")]

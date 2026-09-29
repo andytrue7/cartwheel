@@ -16,15 +16,31 @@ public class InMemoryProductRepository : IProductRepository
         }
     }
 
-    public Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<Product>> GetAllAsync(ProductFilter? filter = null, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
+        filter ??= ProductFilter.None;
 
-        var ordered = _products.Values
-            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(p => p.Id)
-            .ToList();
-        
+        IEnumerable<Product> matching = _products.Values;
+
+        var search = filter.Search?.Trim();
+        if (!string.IsNullOrEmpty(search))
+        {
+            matching = matching.Where(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (filter.CategoryId is { } categoryId)
+        {
+            matching = matching.Where(p => p.Category.Id == categoryId);
+        }
+
+        if (filter.InStockOnly)
+        {
+            matching = matching.Where(p => p.StockQuantity > 0);
+        }
+
+        var ordered = Sort(matching, filter.SortOrder).ToList();
+
         return Task.FromResult<IReadOnlyList<Product>>(ordered);
     }
 
@@ -62,6 +78,22 @@ public class InMemoryProductRepository : IProductRepository
         ct.ThrowIfCancellationRequested();
 
         return Task.FromResult(_products.TryRemove(id, out _));
+    }
+
+    // Ties always fall back to name, then Id, so the order is the same on every call.
+    private static IEnumerable<Product> Sort(IEnumerable<Product> products, ProductSortOrder sortOrder)
+    {
+        var sorted = sortOrder switch
+        {
+            ProductSortOrder.Name => products.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase),
+            ProductSortOrder.PriceAscending => products.OrderBy(p => p.Price)
+                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase),
+            ProductSortOrder.PriceDescending => products.OrderByDescending(p => p.Price)
+                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase),
+            _ => throw new ArgumentOutOfRangeException(nameof(sortOrder), sortOrder, "Unknown sort order.")
+        };
+
+        return sorted.ThenBy(p => p.Id);
     }
 
     private void Add(Product product)

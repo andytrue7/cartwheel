@@ -19,9 +19,22 @@ public class FakeProductRepository(params Product[] products) : IProductReposito
         return Task.FromResult(_products.FirstOrDefault(p => p.Id == id));
     }
 
-    public Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken ct = default)
+    /// <summary>
+    /// Honours the search, category and in-stock criteria but ignores sorting:
+    /// products come back in the order they were given.
+    /// </summary>
+    public Task<IReadOnlyList<Product>> GetAllAsync(ProductFilter? filter = null, CancellationToken ct = default)
     {
-        return Task.FromResult<IReadOnlyList<Product>>(_products.ToList());
+        filter ??= ProductFilter.None;
+
+        var matching = _products
+            .Where(p => string.IsNullOrWhiteSpace(filter.Search)
+                        || p.Name.Contains(filter.Search.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Where(p => filter.CategoryId is null || p.Category.Id == filter.CategoryId)
+            .Where(p => !filter.InStockOnly || p.StockQuantity > 0)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<Product>>(matching);
     }
 
     public Task AddAsync(Product product, CancellationToken ct = default)

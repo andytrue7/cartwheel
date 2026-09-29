@@ -150,6 +150,6 @@ public class InMemoryProductRepositoryTests
         cancellation.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(
-            () => repository.GetAllAsync(cancellation.Token));
+            () => repository.GetAllAsync(ct: cancellation.Token));
     }
 }

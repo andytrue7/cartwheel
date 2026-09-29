@@ -142,3 +142,92 @@ DELETE {{baseUrl}}/api/products/{{createdId}}
 DELETE {{baseUrl}}/api/products/{{createdId}}
 
 > {% client.test("404", () => client.assert(response.status === 404)); %}
+
+### 16. Search: case-insensitive, part of the name (expect 200, only names containing "mac")
+GET {{baseUrl}}/api/products?search=MAC
+Accept: application/json
+
+> {%
+    client.test("names contain 'mac'", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.length > 0);
+        client.assert(response.body.every(p => p.name.toLowerCase().includes("mac")));
+    });
+%}
+
+### 17. Category filter (expect 200, only that category). Run request 5 first to set categoryId.
+GET {{baseUrl}}/api/products?categoryId={{categoryId}}
+Accept: application/json
+
+> {%
+    client.test("single category", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.length > 0);
+        client.assert(response.body.every(p => p.categoryId === client.global.get("categoryId")));
+    });
+%}
+
+### 18. In stock only (expect 200, no product with zero stock)
+GET {{baseUrl}}/api/products?inStock=true
+Accept: application/json
+
+> {%
+    client.test("all in stock", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.every(p => p.stockQuantity > 0));
+    });
+%}
+
+### 19. Sort by price, cheapest first (expect 200, prices never go down)
+GET {{baseUrl}}/api/products?sort=priceAsc
+Accept: application/json
+
+> {%
+    client.test("price ascending", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.every((p, i, all) => i === 0 || all[i - 1].price <= p.price));
+    });
+%}
+
+### 20. Sort by price, most expensive first (expect 200, prices never go up)
+GET {{baseUrl}}/api/products?sort=priceDesc
+Accept: application/json
+
+> {%
+    client.test("price descending", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.every((p, i, all) => i === 0 || all[i - 1].price >= p.price));
+    });
+%}
+
+### 21. All filters combined (expect 200, every product passes every filter)
+GET {{baseUrl}}/api/products?search=o&categoryId={{categoryId}}&inStock=true&sort=priceDesc
+Accept: application/json
+
+> {%
+    client.test("all filters apply", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.every(p =>
+            p.name.toLowerCase().includes("o")
+            && p.categoryId === client.global.get("categoryId")
+            && p.stockQuantity > 0));
+        client.assert(response.body.every((p, i, all) => i === 0 || all[i - 1].price >= p.price));
+    });
+%}
+
+### 22. Invalid sort value (expect 400 with a ProblemDetails body naming "Sort")
+GET {{baseUrl}}/api/products?sort=cheapest
+Accept: application/json
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 23. Category id that doesn't exist (expect 200 with an empty list: filters narrow, they don't validate)
+GET {{baseUrl}}/api/products?categoryId=00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+> {%
+    client.test("empty list", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.length === 0);
+    });
+%}
