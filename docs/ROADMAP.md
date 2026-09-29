@@ -1,7 +1,6 @@
 # Cartwheel roadmap
 
-The curriculum runs about 12 weeks at 1 to 2 hours a day. Each task ends with a "Done when" check and
-quiz questions. Status: ✅ done, ▶️ next, ⬜ not started.
+The curriculum runs about 12 weeks at 1 to 2 hours a day. Each task ends with a "Done when" check. Status: ✅ done, ▶️ next, ⬜ not started, ⏭️ skipped.
 
 ## Phase 0: Environment ✅
 
@@ -27,15 +26,13 @@ Angular CLI installed, SQL Server in Docker Compose with a named volume, git rep
    return 4xx instead of 500. Consider exposing the cart through the API to have a real case.
 5. ✅ Controller unit tests with a mocking library (Moq or NSubstitute).
 
-Phase quiz topics: the request pipeline, dependency injection lifetimes, idempotency, status codes.
-
 ## Phase 3: MSSQL and EF Core
 
-1. ▶️ Design the schema on paper, create it by hand in T-SQL, and write five queries by hand
+1. ⏭️ Design the schema on paper, create it by hand in T-SQL, and write five queries by hand
    (join, count per category, price filter, and so on).
-2. ⬜ EF Core with the SQL Server provider, `CartwheelDbContext`, entity configurations, the first
+2. ✅ EF Core with the SQL Server provider, `CartwheelDbContext`, entity configurations, the first
    migration, and a comparison with the hand-made schema.
-3. ⬜ Replace the in-memory repositories with EF implementations behind the same interfaces.
+3. ▶️ Replace the in-memory repositories with EF implementations behind the same interfaces.
 4. ⬜ Pagination on the product list (page, page size, total count).
 5. ⬜ Repository tests against SQLite or the EF in-memory provider, and the trade-offs of each.
 

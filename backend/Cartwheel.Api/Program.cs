@@ -1,10 +1,25 @@
 using Cartwheel.Api.ErrorHandling;
 using Cartwheel.Domain.Repositories;
 using Cartwheel.Domain.Services;
+using Cartwheel.Infrastructure.Persistence;
 using Cartwheel.Infrastructure.Repositories;
 using Cartwheel.Infrastructure.Seeding;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+
+DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = new SqlConnectionStringBuilder(
+    builder.Configuration.GetConnectionString("Cartwheel")
+    ?? throw new InvalidOperationException("Connection string 'Cartwheel' is missing."))
+{
+    Password = builder.Configuration["MSSQL_SA_PASSWORD"]
+               ?? throw new InvalidOperationException("MSSQL_SA_PASSWORD is not set. See .env.example.")
+}.ConnectionString;
+
+builder.Services.AddDbContext<CartwheelDbContext>(o => o.UseSqlServer(connectionString));
 
 // Add services to the container.
 

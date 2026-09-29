@@ -50,8 +50,16 @@ public class Product
         private set => field = ValidateCategory(value);
     }
 
+    // For EF Core. It can't pass the Category navigation to the public constructor, so it creates
+    // the product here and then writes every property straight into its backing field.
+#pragma warning disable CS9264 // EF fills Name and Category right after construction.
+    private Product()
+    {
+    }
+#pragma warning restore CS9264
+
     public Product(
-        string name, 
+        string name,
         decimal price,  
         int stockQuantity, 
         Category category,
