@@ -16,7 +16,7 @@ Angular CLI installed, SQL Server in Docker Compose with a named volume, git rep
 4. ✅ First xUnit tests for `Product` and `Cart`.
 5. ✅ `IProductRepository`, the in-memory repository in Infrastructure, `CartService`, and a hand-written fake.
 
-## Phase 2: ASP.NET Web API
+## Phase 2: ASP.NET Web API ✅
 
 1. ✅ `Cartwheel.Api` and `Cartwheel.Shared` (.NET Standard 2.0). GET all and GET by id, DTOs,
    dependency injection lifetimes, a thread-safe singleton repository, Swagger UI.
@@ -25,13 +25,13 @@ Angular CLI installed, SQL Server in Docker Compose with a named volume, git rep
 3. ✅ Search, category filter, in-stock filter, and sorting through the query string. Playground deleted.
 4. ✅ Global exception handling that maps domain exceptions to ProblemDetails, so business errors
    return 4xx instead of 500. Consider exposing the cart through the API to have a real case.
-5. ▶️ Controller unit tests with a mocking library (Moq or NSubstitute).
+5. ✅ Controller unit tests with a mocking library (Moq or NSubstitute).
 
 Phase quiz topics: the request pipeline, dependency injection lifetimes, idempotency, status codes.
 
 ## Phase 3: MSSQL and EF Core
 
-1. ⬜ Design the schema on paper, create it by hand in T-SQL, and write five queries by hand
+1. ▶️ Design the schema on paper, create it by hand in T-SQL, and write five queries by hand
    (join, count per category, price filter, and so on).
 2. ⬜ EF Core with the SQL Server provider, `CartwheelDbContext`, entity configurations, the first
    migration, and a comparison with the hand-made schema.

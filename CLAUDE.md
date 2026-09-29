@@ -26,8 +26,8 @@ works about 1 to 2 hours a day.
 
 - Phase 0 (environment): done.
 - Phase 1 (C# fundamentals through the domain): done.
-- Phase 2 (ASP.NET Web API): Tasks 1 to 4 done. Task 4 quiz answers still to be graded.
-- **Next: Phase 2, Task 5, controller unit tests with a mocking library.**
+- Phase 2 (ASP.NET Web API): done.
+- **Next: Phase 3, Task 1, design the schema on paper and write it and five queries in T-SQL by hand.**
 
 Update this section after each approved task.
 
@@ -42,7 +42,8 @@ Update this section after each approved task.
     and an `IsExternalInit` stub so records and `init` work.
   - `Cartwheel.Api`: controllers, manual mapping extension methods in `Mapping/`, Swagger UI in
     development, and `Cartwheel.Api.http` as the manual test script (JetBrains syntax).
-  - `Cartwheel.Tests`: xUnit tests, with hand-written fakes in `Fakes/`.
+  - `Cartwheel.Tests`: xUnit tests, with hand-written fakes in `Fakes/` and controller tests in
+    `Controllers/` (NSubstitute, with its analyzers).
 - `frontend/` does not exist yet. Angular starts in Phase 4.
 
 ## Conventions settled so far
