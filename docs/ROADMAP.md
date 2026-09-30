@@ -32,8 +32,8 @@ Angular CLI installed, SQL Server in Docker Compose with a named volume, git rep
    (join, count per category, price filter, and so on).
 2. ✅ EF Core with the SQL Server provider, `CartwheelDbContext`, entity configurations, the first
    migration, and a comparison with the hand-made schema.
-3. ▶️ Replace the in-memory repositories with EF implementations behind the same interfaces.
-4. ⬜ Pagination on the product list (page, page size, total count).
+3. ✅ Replace the in-memory repositories with EF implementations behind the same interfaces.
+4. ▶️ Pagination on the product list (page, page size, total count).
 5. ⬜ Repository tests against SQLite or the EF in-memory provider, and the trade-offs of each.
 
 Done when the API serves data from SQL Server and migrations run from the CLI.

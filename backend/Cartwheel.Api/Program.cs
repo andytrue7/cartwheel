@@ -19,7 +19,10 @@ var connectionString = new SqlConnectionStringBuilder(
                ?? throw new InvalidOperationException("MSSQL_SA_PASSWORD is not set. See .env.example.")
 }.ConnectionString;
 
-builder.Services.AddDbContext<CartwheelDbContext>(o => o.UseSqlServer(connectionString));
+builder.Services.AddDbContext<CartwheelDbContext>(o => o
+    .UseSqlServer(connectionString)
+    .UseSeeding(CartwheelSeeder.Seed)
+    .UseAsyncSeeding(CartwheelSeeder.SeedAsync));
 
 // Add services to the container.
 
@@ -30,10 +33,9 @@ builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
-// One seed, so products and the category repository share the same Category objects.
-var seed = SeedCatalog.Create();
-builder.Services.AddSingleton<ICategoryRepository>(new InMemoryCategoryRepository(seed.Categories));
-builder.Services.AddSingleton<IProductRepository>(new InMemoryProductRepository(seed.Products));
+// Scoped, because DbContext is scoped: one context (and one set of tracked entities) per request.
+builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
+builder.Services.AddScoped<IProductRepository, EfProductRepository>();
 builder.Services.AddScoped<CartService>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

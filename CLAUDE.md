@@ -28,8 +28,8 @@ works about 1 to 2 hours a day.
 - Phase 1 (C# fundamentals through the domain): done.
 - Phase 2 (ASP.NET Web API): done.
 - Phase 3 (MSSQL and EF Core): Task 1 (hand-written schema and T-SQL) skipped at Andrii's request.
-- Phase 3 Task 2 (EF Core model, `InitialCreate` migration, `Cartwheel` database): done.
-- **Next: Phase 3, Task 3, EF repositories behind the existing interfaces.**
+- Phase 3 Tasks 2 and 3 (EF Core model, `InitialCreate` migration, EF repositories, seeding): done.
+- **Next: Phase 3, Task 4, pagination on the product list.**
 
 Update this section after each approved task.
 
@@ -41,7 +41,9 @@ Update this section after each approved task.
   - `Cartwheel.Domain`: entities, business rules, domain exceptions, repository interfaces, `CartService`.
   - `Cartwheel.Infrastructure`: in-memory repositories, `SeedCatalog`, and EF Core in `Persistence/`:
     `CartwheelDbContext`, one `IEntityTypeConfiguration` per entity in `Configurations/`, and `Migrations/`.
-    The API still uses the in-memory repositories until Phase 3 Task 3.
+    The API uses `EfProductRepository` and `EfCategoryRepository` (scoped). The in-memory repositories
+    remain as alternative implementations with their own tests. `CartwheelSeeder` fills an empty database
+    from `SeedCatalog` through `UseSeeding`/`UseAsyncSeeding` on `dotnet ef database update`.
   - `Cartwheel.Shared`: request and response DTOs. Targets `netstandard2.0` with `LangVersion latest`
     and an `IsExternalInit` stub so records and `init` work.
   - `Cartwheel.Api`: controllers, manual mapping extension methods in `Mapping/`, Swagger UI in
@@ -74,7 +76,11 @@ Update this section after each approved task.
 - **Persistence:** mapping is Fluent API only, never attributes on domain classes. Keys use
   `ValueGeneratedNever()` because the domain creates ids. Constraints are named explicitly, the database
   repeats the domain's rules as check constraints, and relationships use `DeleteBehavior.Restrict`.
-  EF-only private constructors suppress CS9264 locally with a comment.
+  EF-only private constructors suppress CS9264 locally with a comment. Product queries always
+  `Include(p => p.Category)`. `GetByIdAsync` is tracked (the update flow depends on it), lists use
+  `AsNoTracking()`, `UpdateAsync` only saves and turns `DbUpdateConcurrencyException` into `false`, and
+  `RemoveAsync` uses `ExecuteDeleteAsync`. Queries use no `StringComparison` or `StringComparer`,
+  because they don't translate to SQL; the case-insensitive collation handles it.
 - **Configuration:** no secrets in committed files. `Program.cs` loads the repo-root `.env` with
   DotNetEnv, and `SqlConnectionStringBuilder` adds `MSSQL_SA_PASSWORD` to the password-less connection
   string in `appsettings.Development.json`.
@@ -88,8 +94,7 @@ Update this section after each approved task.
 - Enum query values also accept defined numbers (`sort=1`). Acceptable for now.
 - `DomainExceptionHandler` maps exceptions by type only, so `ProductNotFoundException` is always 404,
   even when the id came from a body (which should be 400). Revisit when the cart gets an API.
-- The repositories are singletons, but `DbContext` is scoped. They must become scoped when the EF
-  repositories arrive, and product queries need `Include(p => p.Category)`, or `Category` comes back null.
+- `EfProductRepository`'s `DbUpdateConcurrencyException` branch has no test yet. Phase 3 Task 5 covers it.
 - `Categories.Name` is unique in the database but not in the domain, so a duplicate would surface as a
   `DbUpdateException` (500) once categories can be created.
 - Stock changes are check-then-act on a shared in-memory instance, so they are not safe under
