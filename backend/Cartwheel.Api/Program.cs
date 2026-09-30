@@ -26,6 +26,14 @@ builder.Services.AddDbContext<CartwheelDbContext>(o => o
 
 // Add services to the container.
 
+// Browsers block cross-origin calls unless the API says the origin is allowed. Origins come from
+// configuration, so each environment lists its own.
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(o => o.AddPolicy("Frontend", policy => policy
+    .WithOrigins(allowedOrigins)
+    .AllowAnyHeader()
+    .AllowAnyMethod()));
+
 builder.Services.AddControllers();
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
@@ -58,6 +66,8 @@ else
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+
+app.UseCors("Frontend");
 
 app.UseAuthorization();
 

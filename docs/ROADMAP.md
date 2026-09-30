@@ -26,7 +26,7 @@ Angular CLI installed, SQL Server in Docker Compose with a named volume, git rep
    return 4xx instead of 500. Consider exposing the cart through the API to have a real case.
 5. ✅ Controller unit tests with a mocking library (Moq or NSubstitute).
 
-## Phase 3: MSSQL and EF Core
+## Phase 3: MSSQL and EF Core ✅
 
 1. ⏭️ Design the schema on paper, create it by hand in T-SQL, and write five queries by hand
    (join, count per category, price filter, and so on).
@@ -34,15 +34,16 @@ Angular CLI installed, SQL Server in Docker Compose with a named volume, git rep
    migration, and a comparison with the hand-made schema.
 3. ✅ Replace the in-memory repositories with EF implementations behind the same interfaces.
 4. ✅ Pagination on the product list (page, page size, total count).
-5. ▶️ Repository tests against SQLite or the EF in-memory provider, and the trade-offs of each.
+5. ⏭️ Repository integration tests against a real SQL Server in Testcontainers (skipped for now). SQLite and the EF
+   in-memory provider were compared first and rejected (see the task notes in CLAUDE.md).
 
 Done when the API serves data from SQL Server and migrations run from the CLI.
 
 ## Phase 4: Angular fundamentals
 
-1. ⬜ TypeScript warm-up: model Product and Cart and the total logic in plain TypeScript.
-2. ⬜ Scaffold `frontend/cartwheel-web`, enable CORS on the API, show the product list.
-3. ⬜ Product detail page with routing and route parameters.
+1. ⏭️ TypeScript warm-up: model Product and Cart and the total logic in plain TypeScript.
+2. ✅ Scaffold `frontend/cartwheel-web`, enable CORS on the API, show the product list.
+3. ▶️ Product detail page with routing and route parameters.
 4. ⬜ Search, category filter, and sort controls wired to the query parameters.
 5. ⬜ Cart state in a service with signals, a cart page, a header badge, and `localStorage`.
 6. ⬜ First Angular tests: a pipe, a service with `HttpClientTesting`, and a component.

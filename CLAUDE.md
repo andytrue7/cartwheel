@@ -29,7 +29,20 @@ works about 1 to 2 hours a day.
 - Phase 2 (ASP.NET Web API): done.
 - Phase 3 (MSSQL and EF Core): Task 1 (hand-written schema and T-SQL) skipped at Andrii's request.
 - Phase 3 Tasks 2 to 4 (EF Core model, `InitialCreate` migration, EF repositories, seeding, pagination): done.
-- **Next: Phase 3, Task 5, repository tests against SQLite or the EF in-memory provider.**
+- Phase 3 Task 5 (repository integration tests in Testcontainers) skipped for now at Andrii's request. The
+  handout design: a separate `Cartwheel.IntegrationTests` project, one container per run through a
+  collection fixture, the compose file's image, `MigrateAsync`, tables emptied per test, and a fresh
+  `DbContext` per Arrange/Act/Assert step. A spike
+  ran the same repository scenarios on three providers. EF in-memory: `ExecuteDeleteAsync` throws, search is
+  case-sensitive, and the unique index isn't enforced. SQLite: sorting by `decimal` crashes the test host
+  on this Mac's comma locale (`FormatException: '1499.0'`), and search is case-sensitive. SQL Server in a
+  container passed every scenario, including the `DbUpdateConcurrencyException` branch; it starts in ~7 s.
+- Phase 3: done (the API serves SQL Server data and migrations run from the CLI).
+- Phase 4 Task 1 (TypeScript warm-up) skipped at Andrii's request. Teach its points in the Angular tasks:
+  money in integer cents, union types, `as` is a claim and not a check, and types vanish at runtime.
+- Phase 4 Task 2 (Angular app, CORS, product list): done. The repo moved to `practice/csharp/cartwheel`
+  because a `#` in the path breaks Vite (`ng test` failed with `Cannot find module`, `ng serve` served a
+  blank page). Keep the repo path free of `#`. **Next: Phase 4 Task 3 (product detail page with routing).**
 
 Update this section after each approved task.
 
@@ -52,7 +65,12 @@ Update this section after each approved task.
     `Controllers/` (NSubstitute, with its analyzers).
 - `backend/dotnet-tools.json` pins `dotnet-ef` as a local tool (`dotnet tool restore`). Migrations run from
   `backend/` with `--project Cartwheel.Infrastructure --startup-project Cartwheel.Api`.
-- `frontend/` does not exist yet. Angular starts in Phase 4.
+- `frontend/cartwheel-web`: Angular 21.2 (standalone, zoneless, Vitest, SCSS, no SSR), generated with
+  `--skip-git`. `ProductsApi` returns Observables; components hold state in signals. The API URL comes
+  from `src/environments/`. Needs npm 11: npm 10.9.2 (bundled with Node 22.14) crashes installing
+  Angular 21 with `Cannot read properties of null (reading 'edgesOut')`.
+- CORS: the `Frontend` policy allows the origins in `Cors:AllowedOrigins` (`http://localhost:4200` in
+  Development). `UseCors` sits after `UseExceptionHandler`, so error responses carry CORS headers too.
 
 ## Conventions settled so far
 
@@ -98,7 +116,9 @@ Update this section after each approved task.
 - Enum query values also accept defined numbers (`sort=1`). Acceptable for now.
 - `DomainExceptionHandler` maps exceptions by type only, so `ProductNotFoundException` is always 404,
   even when the id came from a body (which should be 400). Revisit when the cart gets an API.
-- `EfProductRepository`'s `DbUpdateConcurrencyException` branch has no test yet. Phase 3 Task 5 covers it.
+- `EfProductRepository`'s `DbUpdateConcurrencyException` branch has no test, and the EF repositories
+  have no tests at all, because Phase 3 Task 5 was skipped. The API no longer uses
+  `InMemoryProductRepository` or `InMemoryCategoryRepository`; they survive only for their own tests.
 - `Categories.Name` is unique in the database but not in the domain, so a duplicate would surface as a
   `DbUpdateException` (500) once categories can be created.
 - Stock changes are check-then-act on a shared in-memory instance, so they are not safe under

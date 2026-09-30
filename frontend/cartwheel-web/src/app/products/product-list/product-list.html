@@ -1,0 +1,20 @@
+@if (loading()) {
+  <p>Loading products…</p>
+} @else if (error()) {
+  <p class="error">{{ error() }}</p>
+} @else {
+  <ul class="products">
+    @for (p of products(); track p.id) {
+      <li>
+        <h2>{{ p.name }}</h2>
+        <p class="category">{{ p.categoryName }}</p>
+        <p class="price">{{ p.price | currency: 'USD' }}</p>
+        @if (p.stockQuantity === 0) {
+          <p class="out-of-stock">Out of stock</p>
+        }
+      </li>
+    } @empty {
+      <p>No products yet.</p>
+    }
+  </ul>
+}
