@@ -37,6 +37,14 @@ public class FakeProductRepository(params Product[] products) : IProductReposito
         return Task.FromResult<IReadOnlyList<Product>>(matching);
     }
 
+    public async Task<PagedResult<Product>> GetPageAsync(
+        ProductFilter? filter, PageRequest page, CancellationToken ct = default)
+    {
+        var matching = await GetAllAsync(filter, ct);
+        var items = matching.Skip(page.Skip).Take(page.PageSize).ToList();
+        return new PagedResult<Product>(items, matching.Count, page);
+    }
+
     public Task AddAsync(Product product, CancellationToken ct = default)
     {
         _products.Add(product);

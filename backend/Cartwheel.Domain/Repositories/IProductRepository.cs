@@ -7,6 +7,13 @@ public interface IProductRepository
     /// <summary>Returns the products matching the filter; a null filter returns all of them, sorted by name.</summary>
     Task<IReadOnlyList<Product>> GetAllAsync(ProductFilter? filter = null, CancellationToken ct = default);
 
+    /// <summary>
+    /// Returns one page of the products matching the filter, in the filter's sort order, with the total
+    /// number of matches. A page past the last one has no items but still reports the real total.
+    /// </summary>
+    Task<PagedResult<Product>> GetPageAsync(
+        ProductFilter? filter, PageRequest page, CancellationToken ct = default);
+
     Task AddAsync(Product product, CancellationToken ct = default);
 
     /// <summary>

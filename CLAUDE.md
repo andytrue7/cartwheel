@@ -28,8 +28,8 @@ works about 1 to 2 hours a day.
 - Phase 1 (C# fundamentals through the domain): done.
 - Phase 2 (ASP.NET Web API): done.
 - Phase 3 (MSSQL and EF Core): Task 1 (hand-written schema and T-SQL) skipped at Andrii's request.
-- Phase 3 Tasks 2 and 3 (EF Core model, `InitialCreate` migration, EF repositories, seeding): done.
-- **Next: Phase 3, Task 4, pagination on the product list.**
+- Phase 3 Tasks 2 to 4 (EF Core model, `InitialCreate` migration, EF repositories, seeding, pagination): done.
+- **Next: Phase 3, Task 5, repository tests against SQLite or the EF in-memory provider.**
 
 Update this section after each approved task.
 
@@ -73,6 +73,10 @@ Update this section after each approved task.
   201 with `CreatedAtAction` for creates, 204 for update and delete, 404 only when the resource in the
   URL doesn't exist, 400 through `ValidationProblem` for a bad id inside a body, and 200 with an empty
   list when a filter matches nothing.
+- **Pagination:** `GET /api/products` returns `PagedResponse<T>` (`items`, `page`, `pageSize`, `totalCount`,
+  `totalPages`). Offset paging, 1-based pages, default size 20, maximum 100, page capped at 1,000,000 so
+  `(page - 1) * pageSize` can't overflow. The domain's `PageRequest` guards the same limits as the DTO's
+  `[Range]`. A page past the end is 200 with no items and the real total. Categories are not paged.
 - **Persistence:** mapping is Fluent API only, never attributes on domain classes. Keys use
   `ValueGeneratedNever()` because the domain creates ids. Constraints are named explicitly, the database
   repeats the domain's rules as check constraints, and relationships use `DeleteBehavior.Restrict`.

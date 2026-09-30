@@ -11,29 +11,24 @@ public class EfProductRepository(CartwheelDbContext context) : IProductRepositor
     {
         filter ??= ProductFilter.None;
 
-        // Nothing runs against the database until ToListAsync: every call below only adds to the query.
-        IQueryable<Product> query = context.Products
-            .AsNoTracking()
-            .Include(p => p.Category);
+        return await Sort(Filter(filter).Include(p => p.Category), filter.SortOrder).ToListAsync(ct);
+    }
 
-        var search = filter.Search?.Trim();
-        if (!string.IsNullOrEmpty(search))
-        {
-            // No StringComparison: EF can't translate it. The database collation is case-insensitive.
-            query = query.Where(p => p.Name.Contains(search));
-        }
+    public async Task<PagedResult<Product>> GetPageAsync(
+        ProductFilter? filter, PageRequest page, CancellationToken ct = default)
+    {
+        filter ??= ProductFilter.None;
+        var matching = Filter(filter);
 
-        if (filter.CategoryId is { } categoryId)
-        {
-            query = query.Where(p => p.Category.Id == categoryId);
-        }
+        // Counting needs neither the join nor the sort, so the COUNT query has neither.
+        var totalCount = await matching.CountAsync(ct);
 
-        if (filter.InStockOnly)
-        {
-            query = query.Where(p => p.StockQuantity > 0);
-        }
+        var items = await Sort(matching.Include(p => p.Category), filter.SortOrder)
+            .Skip(page.Skip)
+            .Take(page.PageSize)
+            .ToListAsync(ct);
 
-        return await Sort(query, filter.SortOrder).ToListAsync(ct);
+        return new PagedResult<Product>(items, totalCount, page);
     }
 
     // Tracked: the update flow changes this instance and then calls UpdateAsync.
@@ -69,6 +64,32 @@ public class EfProductRepository(CartwheelDbContext context) : IProductRepositor
     // One DELETE statement, no SELECT first. It returns how many rows were deleted.
     public async Task<bool> RemoveAsync(Guid id, CancellationToken ct = default) =>
         await context.Products.Where(p => p.Id == id).ExecuteDeleteAsync(ct) > 0;
+
+    // The one place the filtering rules live: GetAllAsync and GetPageAsync both build on it.
+    // Nothing runs against the database here: every call only adds to the query.
+    private IQueryable<Product> Filter(ProductFilter filter)
+    {
+        IQueryable<Product> query = context.Products.AsNoTracking();
+
+        var search = filter.Search?.Trim();
+        if (!string.IsNullOrEmpty(search))
+        {
+            // No StringComparison: EF can't translate it. The database collation is case-insensitive.
+            query = query.Where(p => p.Name.Contains(search));
+        }
+
+        if (filter.CategoryId is { } categoryId)
+        {
+            query = query.Where(p => p.Category.Id == categoryId);
+        }
+
+        if (filter.InStockOnly)
+        {
+            query = query.Where(p => p.StockQuantity > 0);
+        }
+
+        return query;
+    }
 
     // Ties always fall back to name, then Id, so the order is the same on every call.
     private static IOrderedQueryable<Product> Sort(IQueryable<Product> products, ProductSortOrder sortOrder)

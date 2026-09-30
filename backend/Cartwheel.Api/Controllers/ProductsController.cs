@@ -15,13 +15,14 @@ public class ProductsController(
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(
+    public async Task<ActionResult<PagedResponse<ProductResponse>>> GetAll(
         [FromQuery] ProductListQuery query,
         CancellationToken ct)
     {
         // An unknown category simply matches nothing: filters narrow a list, they don't validate ids.
-        var matching = await products.GetAllAsync(query.ToFilter(), ct);
-        return Ok(matching.Select(p => p.ToResponse()).ToList());
+        // A page past the last one is not an error: 200 with no items and the real total.
+        var page = await products.GetPageAsync(query.ToFilter(), query.ToPageRequest(), ct);
+        return Ok(page.ToResponse());
     }
 
     [HttpGet("{id:guid}")]

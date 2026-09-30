@@ -21,27 +21,21 @@ public class InMemoryProductRepository : IProductRepository
         ct.ThrowIfCancellationRequested();
         filter ??= ProductFilter.None;
 
-        IEnumerable<Product> matching = _products.Values;
-
-        var search = filter.Search?.Trim();
-        if (!string.IsNullOrEmpty(search))
-        {
-            matching = matching.Where(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (filter.CategoryId is { } categoryId)
-        {
-            matching = matching.Where(p => p.Category.Id == categoryId);
-        }
-
-        if (filter.InStockOnly)
-        {
-            matching = matching.Where(p => p.StockQuantity > 0);
-        }
-
-        var ordered = Sort(matching, filter.SortOrder).ToList();
+        var ordered = Sort(Filter(filter), filter.SortOrder).ToList();
 
         return Task.FromResult<IReadOnlyList<Product>>(ordered);
+    }
+
+    public Task<PagedResult<Product>> GetPageAsync(
+        ProductFilter? filter, PageRequest page, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        filter ??= ProductFilter.None;
+
+        var matching = Filter(filter).ToList();
+        var items = Sort(matching, filter.SortOrder).Skip(page.Skip).Take(page.PageSize).ToList();
+
+        return Task.FromResult(new PagedResult<Product>(items, matching.Count, page));
     }
 
     public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -78,6 +72,30 @@ public class InMemoryProductRepository : IProductRepository
         ct.ThrowIfCancellationRequested();
 
         return Task.FromResult(_products.TryRemove(id, out _));
+    }
+
+    // The one place the in-memory filtering rules live: both list methods use it.
+    private IEnumerable<Product> Filter(ProductFilter filter)
+    {
+        IEnumerable<Product> matching = _products.Values;
+
+        var search = filter.Search?.Trim();
+        if (!string.IsNullOrEmpty(search))
+        {
+            matching = matching.Where(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (filter.CategoryId is { } categoryId)
+        {
+            matching = matching.Where(p => p.Category.Id == categoryId);
+        }
+
+        if (filter.InStockOnly)
+        {
+            matching = matching.Where(p => p.StockQuantity > 0);
+        }
+
+        return matching;
     }
 
     // Ties always fall back to name, then Id, so the order is the same on every call.

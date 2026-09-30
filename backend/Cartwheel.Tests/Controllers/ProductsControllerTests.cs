@@ -60,31 +60,72 @@ public class ProductsControllerTests
 
     // ---------- GetAll ----------
 
+    // NSubstitute can't invent a PagedResult (it isn't an interface or a collection), so an unstubbed
+    // GetPageAsync returns null. Tests that only check what the repository received use this.
+    private void GivenEmptyPage()
+    {
+        _products.GetPageAsync(Arg.Any<ProductFilter?>(), Arg.Any<PageRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Product>([], 0, PageRequest.First));
+    }
+
     [Fact]
-    public async Task GetAll_ProductsExist_ReturnsOkWithMappedList()
+    public async Task GetAll_ProductsExist_ReturnsOkWithMappedPage()
     {
         // Arrange
         var laptop = CreateProduct();
         var phone = CreateProduct(name: "iPhone", price: 800m, stock: 3, description: null);
-        _products.GetAllAsync(Arg.Any<ProductFilter?>(), Arg.Any<CancellationToken>())
-            .Returns([laptop, phone]);
+        var request = new PageRequest(1, 2);
+        _products.GetPageAsync(Arg.Any<ProductFilter?>(), Arg.Any<PageRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Product>([laptop, phone], 5, request));
 
         // Act
-        var result = await _controller.GetAll(new ProductListQuery(), CancellationToken.None);
+        var result = await _controller.GetAll(new ProductListQuery { PageSize = 2 }, CancellationToken.None);
 
         // Assert
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var body = Assert.IsAssignableFrom<IEnumerable<ProductResponse>>(ok.Value);
+        var body = Assert.IsType<PagedResponse<ProductResponse>>(ok.Value);
         Assert.Equal(
         [
             new ProductResponse(laptop.Id, "MacBook Air", "A laptop", 1000m, 10, _category.Id, "Laptops"),
             new ProductResponse(phone.Id, "iPhone", null, 800m, 3, _category.Id, "Laptops")
-        ], body);
+        ], body.Items);
+        Assert.Equal(1, body.Page);
+        Assert.Equal(2, body.PageSize);
+        Assert.Equal(5, body.TotalCount);
+        Assert.Equal(3, body.TotalPages);
+    }
+
+    [Fact]
+    public async Task GetAll_PageBeyondTheLast_ReturnsOkWithEmptyItemsAndRealTotal()
+    {
+        _products.GetPageAsync(Arg.Any<ProductFilter?>(), Arg.Any<PageRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Product>([], 12, new PageRequest(9, 5)));
+
+        var result = await _controller.GetAll(new ProductListQuery { Page = 9, PageSize = 5 }, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var body = Assert.IsType<PagedResponse<ProductResponse>>(ok.Value);
+        Assert.Empty(body.Items);
+        Assert.Equal(12, body.TotalCount);
+        Assert.Equal(3, body.TotalPages);
+    }
+
+    [Fact]
+    public async Task GetAll_NothingMatches_ReturnsZeroTotalPages()
+    {
+        _products.GetPageAsync(Arg.Any<ProductFilter?>(), Arg.Any<PageRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Product>([], 0, PageRequest.First));
+
+        var result = await _controller.GetAll(new ProductListQuery(), CancellationToken.None);
+
+        var body = Assert.IsType<PagedResponse<ProductResponse>>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(0, body.TotalPages);
     }
 
     [Fact]
     public async Task GetAll_AllQueryParameters_PassesMatchingFilterToRepository()
     {
+        GivenEmptyPage();
         var categoryId = Guid.NewGuid();
         var query = new ProductListQuery
         {
@@ -104,15 +145,29 @@ public class ProductsControllerTests
         await _controller.GetAll(query, CancellationToken.None);
 
         // ProductFilter is a record, so Arg.Is(expectedFilter) matches by value, not by reference.
-        await _products.Received(1).GetAllAsync(Arg.Is(expectedFilter), Arg.Any<CancellationToken>());
+        await _products.Received(1).GetPageAsync(
+            Arg.Is(expectedFilter), Arg.Any<PageRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task GetAll_EmptyQuery_PassesDefaultFilterToRepository()
+    public async Task GetAll_EmptyQuery_PassesDefaultFilterAndFirstPageToRepository()
     {
+        GivenEmptyPage();
         await _controller.GetAll(new ProductListQuery(), CancellationToken.None);
 
-        await _products.Received(1).GetAllAsync(Arg.Is(ProductFilter.None), Arg.Any<CancellationToken>());
+        await _products.Received(1).GetPageAsync(
+            Arg.Is(ProductFilter.None), Arg.Is(new PageRequest(1, PageRequest.DefaultPageSize)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetAll_PageAndPageSize_ReachRepositoryAsPageRequest()
+    {
+        GivenEmptyPage();
+        await _controller.GetAll(new ProductListQuery { Page = 2, PageSize = 5 }, CancellationToken.None);
+
+        await _products.Received(1).GetPageAsync(
+            Arg.Any<ProductFilter?>(), Arg.Is(new PageRequest(2, 5)), Arg.Any<CancellationToken>());
     }
 
     // ---------- GetById ----------

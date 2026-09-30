@@ -1,11 +1,11 @@
 @baseUrl = http://localhost:5189
 
-### 1. List all products (expect 200, sorted by name)
+### 1. List products, first page (expect 200, a page of up to 20 items sorted by name)
 GET {{baseUrl}}/api/products
 Accept: application/json
 
 > {%
-    client.global.set("productId", response.body[0].id);
+    client.global.set("productId", response.body.items[0].id);
 %}
 
 ### 2. Existing product (expect 200). Run request 1 first to set productId.
@@ -150,8 +150,8 @@ Accept: application/json
 > {%
     client.test("names contain 'mac'", () => {
         client.assert(response.status === 200);
-        client.assert(response.body.length > 0);
-        client.assert(response.body.every(p => p.name.toLowerCase().includes("mac")));
+        client.assert(response.body.items.length > 0);
+        client.assert(response.body.items.every(p => p.name.toLowerCase().includes("mac")));
     });
 %}
 
@@ -162,8 +162,8 @@ Accept: application/json
 > {%
     client.test("single category", () => {
         client.assert(response.status === 200);
-        client.assert(response.body.length > 0);
-        client.assert(response.body.every(p => p.categoryId === client.global.get("categoryId")));
+        client.assert(response.body.items.length > 0);
+        client.assert(response.body.items.every(p => p.categoryId === client.global.get("categoryId")));
     });
 %}
 
@@ -174,7 +174,7 @@ Accept: application/json
 > {%
     client.test("all in stock", () => {
         client.assert(response.status === 200);
-        client.assert(response.body.every(p => p.stockQuantity > 0));
+        client.assert(response.body.items.every(p => p.stockQuantity > 0));
     });
 %}
 
@@ -185,7 +185,7 @@ Accept: application/json
 > {%
     client.test("price ascending", () => {
         client.assert(response.status === 200);
-        client.assert(response.body.every((p, i, all) => i === 0 || all[i - 1].price <= p.price));
+        client.assert(response.body.items.every((p, i, all) => i === 0 || all[i - 1].price <= p.price));
     });
 %}
 
@@ -196,7 +196,7 @@ Accept: application/json
 > {%
     client.test("price descending", () => {
         client.assert(response.status === 200);
-        client.assert(response.body.every((p, i, all) => i === 0 || all[i - 1].price >= p.price));
+        client.assert(response.body.items.every((p, i, all) => i === 0 || all[i - 1].price >= p.price));
     });
 %}
 
@@ -207,11 +207,11 @@ Accept: application/json
 > {%
     client.test("all filters apply", () => {
         client.assert(response.status === 200);
-        client.assert(response.body.every(p =>
+        client.assert(response.body.items.every(p =>
             p.name.toLowerCase().includes("o")
             && p.categoryId === client.global.get("categoryId")
             && p.stockQuantity > 0));
-        client.assert(response.body.every((p, i, all) => i === 0 || all[i - 1].price >= p.price));
+        client.assert(response.body.items.every((p, i, all) => i === 0 || all[i - 1].price >= p.price));
     });
 %}
 
@@ -221,18 +221,75 @@ Accept: application/json
 
 > {% client.test("400", () => client.assert(response.status === 400)); %}
 
-### 23. Category id that doesn't exist (expect 200 with an empty list: filters narrow, they don't validate)
+### 23. Category id that doesn't exist (expect 200 with no items: filters narrow, they don't validate)
 GET {{baseUrl}}/api/products?categoryId=00000000-0000-0000-0000-000000000000
 Accept: application/json
 
 > {%
     client.test("empty list", () => {
         client.assert(response.status === 200);
-        client.assert(response.body.length === 0);
+        client.assert(response.body.items.length === 0);
+        client.assert(response.body.totalCount === 0);
     });
 %}
 
-### 24. Increase stock (expect 200 with the updated product). Run request 1 first to set productId.
+### 24. Page 2 of size 5 (expect 200, 5 items, page 2, totalPages consistent with totalCount)
+GET {{baseUrl}}/api/products?page=2&pageSize=5
+Accept: application/json
+
+> {%
+    client.test("page 2", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.page === 2);
+        client.assert(response.body.pageSize === 5);
+        client.assert(response.body.items.length === 5);
+        client.assert(response.body.totalPages === Math.ceil(response.body.totalCount / 5));
+    });
+%}
+
+### 25. Page beyond the last (expect 200 with no items but the real totalCount, not 404)
+GET {{baseUrl}}/api/products?page=999&pageSize=5
+Accept: application/json
+
+> {%
+    client.test("empty page, real total", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.items.length === 0);
+        client.assert(response.body.totalCount > 0);
+    });
+%}
+
+### 26. Page size above the maximum (expect 400 ProblemDetails naming "PageSize")
+GET {{baseUrl}}/api/products?pageSize=101
+Accept: application/json
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 27. Page 0 (expect 400)
+GET {{baseUrl}}/api/products?page=0
+Accept: application/json
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 28. Page that would overflow int in (page - 1) * pageSize (expect 400)
+GET {{baseUrl}}/api/products?page=2147483647&pageSize=100
+Accept: application/json
+
+> {% client.test("400", () => client.assert(response.status === 400)); %}
+
+### 29. Paging combined with a filter (expect 200, totalCount counts only matching products)
+GET {{baseUrl}}/api/products?inStock=true&page=1&pageSize=3&sort=priceAsc
+Accept: application/json
+
+> {%
+    client.test("filtered page", () => {
+        client.assert(response.status === 200);
+        client.assert(response.body.items.length <= 3);
+        client.assert(response.body.items.every(p => p.stockQuantity > 0));
+    });
+%}
+
+### 30. Increase stock (expect 200 with the updated product). Run request 1 first to set productId.
 POST {{baseUrl}}/api/products/{{productId}}/stock/increase
 Content-Type: application/json
 
@@ -248,7 +305,7 @@ Content-Type: application/json
     client.global.set("stock", response.body.stockQuantity);
 %}
 
-### 25. Decrease within stock (expect 200, stock goes down by 2)
+### 31. Decrease within stock (expect 200, stock goes down by 2)
 POST {{baseUrl}}/api/products/{{productId}}/stock/decrease
 Content-Type: application/json
 
@@ -263,7 +320,7 @@ Content-Type: application/json
     });
 %}
 
-### 26. Decrease beyond stock (expect 409 ProblemDetails with requestedQuantity and availableQuantity)
+### 32. Decrease beyond stock (expect 409 ProblemDetails with requestedQuantity and availableQuantity)
 POST {{baseUrl}}/api/products/{{productId}}/stock/decrease
 Content-Type: application/json
 
@@ -279,7 +336,7 @@ Content-Type: application/json
     });
 %}
 
-### 27. Quantity 0 (expect 400 from validation, the domain is never called)
+### 33. Quantity 0 (expect 400 from validation, the domain is never called)
 POST {{baseUrl}}/api/products/{{productId}}/stock/increase
 Content-Type: application/json
 
@@ -289,7 +346,7 @@ Content-Type: application/json
 
 > {% client.test("400", () => client.assert(response.status === 400)); %}
 
-### 28. Stock change on an unknown id (expect 404)
+### 34. Stock change on an unknown id (expect 404)
 POST {{baseUrl}}/api/products/00000000-0000-0000-0000-000000000000/stock/decrease
 Content-Type: application/json
 

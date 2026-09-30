@@ -25,4 +25,12 @@ public sealed class ProductListQuery
     public bool InStock { get; init; }
 
     public ProductSort Sort { get; init; } = ProductSort.Name;
+
+    // The limits repeat PageRequest.MaxPage and PageRequest.MaxPageSize: this project targets
+    // netstandard2.0 and can't reference the domain.
+    [Range(1, 1_000_000)]
+    public int Page { get; init; } = 1;
+
+    [Range(1, 100)]
+    public int PageSize { get; init; } = 20;
 }
